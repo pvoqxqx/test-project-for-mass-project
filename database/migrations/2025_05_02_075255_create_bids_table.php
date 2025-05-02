@@ -18,7 +18,9 @@ return new class extends Migration
             $table->enum('status', ['Active', 'Resolved', 'Reject'])->default('Active');
             $table->text('message');
             $table->text('comment')->nullable();
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
