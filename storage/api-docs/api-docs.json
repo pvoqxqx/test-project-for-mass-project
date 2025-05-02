@@ -336,18 +336,14 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "name": {
+                                    "status": {
                                         "type": "string",
-                                        "example": "Иван"
+                                        "example": "Resolved, Reject"
                                     },
-                                    "email": {
+                                    "comment": {
                                         "type": "string",
                                         "format": "email",
-                                        "example": "ivan@example.com"
-                                    },
-                                    "message": {
-                                        "type": "string",
-                                        "example": "Мне нужна консультация"
+                                        "example": "Комментарий"
                                     }
                                 },
                                 "type": "object"

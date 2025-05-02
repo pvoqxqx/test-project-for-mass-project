@@ -130,9 +130,8 @@ class BidController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string", example="Иван"),
-     *             @OA\Property(property="email", type="string", format="email", example="ivan@example.com"),
-     *             @OA\Property(property="message", type="string", example="Мне нужна консультация")
+     *             @OA\Property(property="status", type="string", example="Resolved, Reject"),
+     *             @OA\Property(property="comment", type="string", format="email", example="Комментарий"),
      *         )
      *     ),
      *     @OA\Response(response=200, description="Заявка успешно обновлена"),
