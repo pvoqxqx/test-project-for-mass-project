@@ -1,19 +1,44 @@
 version: '3.8'
+
 services:
   app:
     build:
       context: .
-    volumes:
-      - .:/var/www/html
+      dockerfile: Dockerfile
+    container_name: laravel-app
     ports:
       - "8000:8000"
+    volumes:
+      - .:/var/www/html
     depends_on:
       - postgres
+    working_dir: /var/www/html
+    command: >
+      sh -c "if [ ! -f storage/oauth-private.key ] || [ ! -f storage/oauth-public.key ]; then
+                php artisan passport:install;
+              fi &&
+              php artisan config:cache &&
+              php artisan migrate --force &&
+              php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: mass-company
+      DB_USERNAME: user
+      DB_PASSWORD: user
+
   postgres:
     image: postgres:16
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: mass-company
       POSTGRES_USER: user
       POSTGRES_PASSWORD: user
-    ports:
-      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

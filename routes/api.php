@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BidController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -15,14 +17,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-Route::post('/register', [UserController::class, 'register']);
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
 Route::get('/email/verify/{id}/{hash}', [UserController::class, 'verify'])->name('verification.verify');
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::put('/user', [UserController::class, 'update']);
-    Route::delete('/user/{id}', [UserController::class, 'destroy']);
+Route::middleware('auth:api')->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    Route::get('/bids', [BidController::class, 'index']);
+    Route::post('/bids', [BidController::class, 'store']);
+    Route::get('/bids/{id}', [BidController::class, 'show']);
+    Route::put('/bids/{id}', [BidController::class, 'update']);
+    Route::delete('/bids/{id}', [BidController::class, 'destroy']);
 });

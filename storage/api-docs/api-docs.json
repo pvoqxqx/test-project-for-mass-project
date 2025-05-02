@@ -95,10 +95,12 @@
                                 "properties": {
                                     "email": {
                                         "type": "string",
-                                        "format": "email"
+                                        "format": "email",
+                                        "example": "denis.klevtsov@bk.ru"
                                     },
                                     "password": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "password"
                                     }
                                 },
                                 "type": "object"
@@ -114,8 +116,7 @@
                                 "schema": {
                                     "properties": {
                                         "token": {
-                                            "type": "string",
-                                            "example": "your_jwt_token_here"
+                                            "type": "string"
                                         },
                                         "user": {
                                             "$ref": "#/components/schemas/UserResource"
@@ -462,13 +463,23 @@
                 }
             }
         },
-        "/api/user": {
+        "/api/user/{id}": {
             "put": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Обновление профиля (только для обычного пользователя)",
-                "operationId": "5eecd6f62690794e94b1167a814a9059",
+                "operationId": "479f33f268cca6dba677c396b495b60d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -485,6 +496,9 @@
                     },
                     "403": {
                         "description": "Редактирование разрешено только для пользователей и администраторов"
+                    },
+                    "404": {
+                        "description": "Пользователь не найден"
                     }
                 },
                 "security": [

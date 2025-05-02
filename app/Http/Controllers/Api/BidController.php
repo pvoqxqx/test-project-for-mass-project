@@ -12,8 +12,30 @@ use App\Models\Bid;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @OA\Tag(
+ *     name="Bids",
+ *     description="API для управления заявками"
+ * )
+ */
 class BidController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/api/bids",
+     *     tags={"Bids"},
+     *     summary="Получить список заявок",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="status", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="date_from", in="query", required=false, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", required=false, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="sort_by", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="sort_dir", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Успешный ответ", @OA\JsonContent(ref="#/components/schemas/BidCollection")),
+     *     @OA\Response(response=401, description="Неавторизованный доступ"),
+     *     @OA\Response(response=403, description="Доступ запрещён")
+     * )
+     */
     public function index(FilterBidRequest $request): BidCollection
     {
         $this->authorizeRoles([1, 2]); // Админ или модератор
@@ -23,11 +45,9 @@ class BidController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
-
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
@@ -43,15 +63,52 @@ class BidController extends Controller
         );
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/bids/{id}",
+     *     tags={"Bids"},
+     *     summary="Получить заявку по ID",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Успешный ответ"),
+     *     @OA\Response(response=404, description="Заявка не найдена")
+     * )
+     */
     public function show(int $id): BidResource
     {
         $bid = Bid::findOrFail($id);
         return new BidResource($bid);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/bids",
+     *     summary="Создание новой заявки",
+     *     description="Создание заявки доступно только пользователям с ролью role_id = 3",
+     *     tags={"Bids"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "email", "message"},
+     *             @OA\Property(property="name", type="string", example="Иван"),
+     *             @OA\Property(property="email", type="string", format="email", example="ivan@example.com"),
+     *             @OA\Property(property="message", type="string", example="Мне нужна консультация")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Заявка успешно создана"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Доступ запрещён"
+     *     )
+     * )
+     */
     public function store(BidStoreRequest $request): BidResource
     {
-        $this->authorizeRoles([3]); // Только пользователь
+        $this->authorizeRoles([1, 3]);
 
         $bid = Bid::create([
             ...$request->validated(),
@@ -61,6 +118,26 @@ class BidController extends Controller
         return new BidResource($bid);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/bids/{id}",
+     *     tags={"Bids"},
+     *     summary="Обновление заявки",
+     *     description="Обновление заявки доступно только админам и модераторам",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="Иван"),
+     *             @OA\Property(property="email", type="string", format="email", example="ivan@example.com"),
+     *             @OA\Property(property="message", type="string", example="Мне нужна консультация")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Заявка успешно обновлена"),
+     *     @OA\Response(response=403, description="Доступ запрещён")
+     * )
+     */
     public function update(BidUpdateRequest $request, int $id): BidResource
     {
         $this->authorizeRoles([1, 2]); // Админ или модератор
@@ -71,6 +148,18 @@ class BidController extends Controller
         return new BidResource($bid);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/bids/{id}",
+     *     tags={"Bids"},
+     *     summary="Удаление заявки",
+     *     description="Удаление заявки доступно только админам",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Заявка успешно удалена"),
+     *     @OA\Response(response=403, description="Доступ запрещён")
+     * )
+     */
     public function destroy(int $id): JsonResponse
     {
         $this->authorizeRoles([1]); // Только админ
@@ -81,10 +170,10 @@ class BidController extends Controller
         return response()->json(['message' => 'Заявка успешно удалена']);
     }
 
-    private function authorizeRoles(array $roles): void
+    private function authorizeRoles(array $roles, string $message = ''): void
     {
         if (!in_array(Auth::user()->role_id, $roles)) {
-            abort(403, 'Access denied');
+            abort(403, $message ?: 'Access denied');
         }
     }
 }
