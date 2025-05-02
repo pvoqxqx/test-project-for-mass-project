@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users_bid_stories', function (Blueprint $table) {
+        Schema::create('user_bid', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('bid_id');
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('bid_id')->index();
+            $table->unsignedBigInteger('user_id')->index();
+            $table->string('type')->nullable();
             $table->timestamps();
         });
     }
