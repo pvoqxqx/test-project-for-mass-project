@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('bids', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email');
-            $table->enum('status', ['Active', 'Resolved', 'Reject'])->default('Active');
+            $table->string('email')->index();
+            $table->enum('status', ['Active', 'Resolved', 'Reject'])->default('Active')->index();
             $table->text('message');
             $table->text('comment')->nullable();
 

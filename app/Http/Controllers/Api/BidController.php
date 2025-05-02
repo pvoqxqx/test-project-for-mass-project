@@ -8,6 +8,7 @@ use App\Http\Requests\Bid\BidStoreRequest;
 use App\Http\Requests\Bid\BidUpdateRequest;
 use App\Http\Resources\Bid\BidCollection;
 use App\Http\Resources\Bid\BidResource;
+use App\Jobs\ProcessBid;
 use App\Models\Bid;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -106,16 +107,16 @@ class BidController extends Controller
      *     )
      * )
      */
-    public function store(BidStoreRequest $request): BidResource
+    public function store(BidStoreRequest $request): JsonResponse
     {
         $this->authorizeRoles([1, 3]);
 
-        $bid = Bid::create([
-            ...$request->validated(),
-            'status' => 'Active',
-        ]);
+        $validated = $request->validated();
+        $userId = auth()->id();
 
-        return new BidResource($bid);
+        ProcessBid::dispatch($validated, $userId);
+
+        return response()->json(['message' => 'Заявка будет обработана в ближайшее время'], 202);
     }
 
     /**
