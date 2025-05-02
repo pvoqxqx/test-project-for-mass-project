@@ -2,46 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\User\UserStoreRequest;
+use App\Http\Requests\User\UserUpdateRequest;
+use App\Http\Resources\User\UserResource;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
     /**
      * Регистрация нового пользователя.
      */
-    public function register(Request $request)
+    public function register(UserStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => bcrypt($request->password),
+            'role_id'  => 3, // обычный пользователь
         ]);
 
         event(new Registered($user));
 
-        return response()->json(['message' => 'Пользователь зарегистрирован. Проверьте email для подтверждения.'], 201);
+        return response()->json([
+            'message' => 'Пользователь зарегистрирован. Проверьте email для подтверждения.',
+            'user'    => new UserResource($user),
+        ], 201);
     }
 
     /**
      * Подтверждение email.
      */
-    public function verify(Request $request, $id, $hash)
+    public function verify($id, $hash): JsonResponse
     {
         $user = User::findOrFail($id);
 
@@ -54,7 +49,6 @@ class UserController extends Controller
         }
 
         $user->markEmailAsVerified();
-
         event(new Verified($user));
 
         return response()->json(['message' => 'Email успешно подтвержден.'], 200);
@@ -63,11 +57,11 @@ class UserController extends Controller
     /**
      * Удаление пользователя (только для администратора).
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
-        $user = Auth::user();
+        $admin = Auth::user();
 
-        if ($user->role_id !== 1) {
+        if ($admin->role_id !== 1) {
             return response()->json(['message' => 'Доступ запрещен.'], 403);
         }
 
@@ -80,22 +74,25 @@ class UserController extends Controller
     /**
      * Обновление профиля (только для обычного пользователя).
      */
-    public function update(Request $request)
+    public function update(UserUpdateRequest $request): JsonResponse
     {
         $user = Auth::user();
 
-        if ($user->role_id !== 3) {
-            return response()->json(['message' => 'Редактирование разрешено только для пользователей.'], 403);
+        if ($user->role_id !== 3 || $user->role_id !== 1) {
+            return response()->json(['message' => 'Редактирование разрешено только для пользователей и администраторов.'], 403);
         }
 
-        $data = $request->only(['name', 'password']);
+        $data = $request->validated();
 
         if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
+            $data['password'] = bcrypt($data['password']);
         }
 
         $user->update($data);
 
-        return response()->json(['message' => 'Данные успешно обновлены.']);
+        return response()->json([
+            'message' => 'Данные успешно обновлены.',
+            'user'    => new UserResource($user),
+        ]);
     }
 }
