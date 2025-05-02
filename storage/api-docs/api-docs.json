@@ -15,6 +15,145 @@
         }
     ],
     "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Регистрация нового пользователя",
+                "operationId": "8e4e3cb7b46126f4696379d3c7eeb4ad",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Пользователь зарегистрирован",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Пользователь зарегистрирован. Проверьте email для подтверждения."
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/UserRegisterResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Авторизация пользователя",
+                "operationId": "222b2625838e3c57e017987f73598fda",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешная авторизация",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "your_jwt_token_here"
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный логин или пароль"
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Выход пользователя",
+                "operationId": "ad65cbbd4e9f201619eae184a5961a98",
+                "responses": {
+                    "200": {
+                        "description": "Выход успешен"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/bids": {
             "get": {
                 "tags": [
@@ -72,10 +211,16 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/BidCollection"
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "403": {
+                        "description": "Доступ запрещён"
                     }
                 },
                 "security": [
@@ -123,14 +268,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Заявка успешно создана",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Bid"
-                                }
-                            }
-                        }
+                        "description": "Заявка успешно создана"
                     },
                     "403": {
                         "description": "Доступ запрещён"
@@ -143,37 +281,72 @@
                 ]
             }
         },
-        "/api/register": {
-            "post": {
+        "/api/bids/{id}": {
+            "get": {
                 "tags": [
-                    "Users"
+                    "Bids"
                 ],
-                "summary": "Регистрация нового пользователя",
-                "operationId": "482fd8cbb98dc3225fa0e7ac40c1abe6",
+                "summary": "Получить заявку по ID",
+                "operationId": "af13bce4c6b1ac2b10a0e946e764ca40",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ"
+                    },
+                    "404": {
+                        "description": "Заявка не найдена"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Bids"
+                ],
+                "summary": "Обновление заявки",
+                "description": "Обновление заявки доступно только админам и модераторам",
+                "operationId": "1c11e534cbc64f6a19082addacc0bfcc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "password",
-                                    "password_confirmation"
-                                ],
                                 "properties": {
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "Иван"
                                     },
                                     "email": {
                                         "type": "string",
-                                        "format": "email"
+                                        "format": "email",
+                                        "example": "ivan@example.com"
                                     },
-                                    "password": {
-                                        "type": "string"
-                                    },
-                                    "password_confirmation": {
-                                        "type": "string"
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Мне нужна консультация"
                                     }
                                 },
                                 "type": "object"
@@ -182,10 +355,49 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Зарегистрировано"
+                    "200": {
+                        "description": "Заявка успешно обновлена"
+                    },
+                    "403": {
+                        "description": "Доступ запрещён"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Bids"
+                ],
+                "summary": "Удаление заявки",
+                "description": "Удаление заявки доступно только админам",
+                "operationId": "cb1a4722040cfdc9ed9f1536b34d897e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Заявка успешно удалена"
+                    },
+                    "403": {
+                        "description": "Доступ запрещён"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/email/verify/{id}/{hash}": {
@@ -216,21 +428,88 @@
                 "responses": {
                     "200": {
                         "description": "Email подтвержден"
+                    },
+                    "403": {
+                        "description": "Неверный токен"
                     }
                 }
+            }
+        },
+        "/api/users/{id}": {
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Удаление пользователя (только для администратора)",
+                "operationId": "0b4133ed462528a5e648b88ead11e929",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь удален"
+                    },
+                    "403": {
+                        "description": "Доступ запрещен"
+                    }
+                }
+            }
+        },
+        "/api/user": {
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Обновление профиля (только для обычного пользователя)",
+                "operationId": "5eecd6f62690794e94b1167a814a9059",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Данные успешно обновлены"
+                    },
+                    "403": {
+                        "description": "Редактирование разрешено только для пользователей и администраторов"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },
     "components": {
         "schemas": {
-            "Bid": {
-                "title": "Bid",
+            "UserCollection": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/UserResource"
+                }
+            },
+            "UserResource": {
                 "required": [
                     "id",
                     "name",
                     "email",
-                    "message",
-                    "status"
+                    "created_at",
+                    "updated_at"
                 ],
                 "properties": {
                     "id": {
@@ -239,34 +518,17 @@
                     },
                     "name": {
                         "type": "string",
-                        "example": "Иван Иванов"
+                        "example": "Иван"
                     },
                     "email": {
                         "type": "string",
                         "format": "email",
                         "example": "ivan@example.com"
                     },
-                    "message": {
-                        "type": "string",
-                        "example": "У меня вопрос по услуге..."
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "Active",
-                            "Resolved"
-                        ],
-                        "example": "Active"
-                    },
-                    "comment": {
-                        "type": "string",
-                        "example": "Ваш вопрос решен.",
-                        "nullable": true
-                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-01T15:00:00Z"
+                        "example": "2025-05-02T10:00:00Z"
                     },
                     "updated_at": {
                         "type": "string",
@@ -276,48 +538,136 @@
                 },
                 "type": "object"
             },
-            "User": {
-                "title": "User",
+            "UserUpdateRequest": {
                 "required": [
-                    "id",
                     "name",
-                    "email",
-                    "role_id"
+                    "email"
                 ],
                 "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
                     "name": {
                         "type": "string",
-                        "example": "Анна Иванова"
+                        "example": "Иван"
                     },
                     "email": {
                         "type": "string",
                         "format": "email",
-                        "example": "anna@example.com"
+                        "example": "ivan@example.com"
                     },
-                    "email_verified_at": {
+                    "password": {
                         "type": "string",
-                        "format": "date-time",
-                        "example": "2025-05-02T09:30:00Z",
+                        "example": "newpassword123",
                         "nullable": true
                     },
-                    "role_id": {
-                        "description": "1 — Admin, 2 — Moderator, 3 — User",
-                        "type": "integer",
-                        "example": 3
+                    "password_confirmation": {
+                        "type": "string",
+                        "example": "newpassword123",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "BidCollection": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/BidResource"
+                }
+            },
+            "Bid": {
+                "required": [
+                    "name",
+                    "email",
+                    "message"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Иван"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "ivan@example.com"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Мне нужна консультация"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Active"
                     },
                     "created_at": {
                         "type": "string",
-                        "format": "date-time",
-                        "example": "2025-05-01T15:00:00Z"
+                        "format": "date-time"
                     },
                     "updated_at": {
                         "type": "string",
-                        "format": "date-time",
-                        "example": "2025-05-02T10:00:00Z"
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "BidResource": {
+                "required": [
+                    "name",
+                    "email",
+                    "message",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Иван"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "ivan@example.com"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Мне нужна консультация"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Active"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "UserRegisterResource": {
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Иван"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "ivan@example.com"
                     }
                 },
                 "type": "object"
@@ -332,6 +682,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Auth",
+            "description": "API для авторизации и аутентификации пользователей"
+        },
         {
             "name": "Bids",
             "description": "API для управления заявками"
