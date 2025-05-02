@@ -15,17 +15,14 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->count(10)->create();
-
         $existingIds = DB::table('users')
-            ->whereIn('id', [1, 2, 3])
+            ->whereIn('email', ['denis.klevtsov@bk.ru', 'denis.klevtsov@gmail.com', 'tesetsetsetstesetsetsets@gmail.com'])
             ->pluck('id')
             ->toArray();
 
         if (count($existingIds) === 0) {
             DB::table('users')->insert([
                 [
-                    'id' => 1,
                     'role_id' => 1,
                     'name' => 'admin',
                     'email' => 'denis.klevtsov@bk.ru',
@@ -35,7 +32,6 @@ class UserSeeder extends Seeder
                     'created_at' => now(),
                 ],
                 [
-                    'id' => 2,
                     'role_id' => 2,
                     'name' => 'moderator',
                     'email' => 'denis.klevtsov@gmail.com',
@@ -45,7 +41,6 @@ class UserSeeder extends Seeder
                     'created_at' => now(),
                 ],
                 [
-                    'id' => 3,
                     'role_id' => 3,
                     'name' => 'user',
                     'email' => 'tesetsetsetstesetsetsets@gmail.com',
@@ -55,6 +50,9 @@ class UserSeeder extends Seeder
                     'created_at' => now(),
                 ]
             ]);
+            $this->command->info('Test users inserted.');
+
+            User::factory()->count(10)->create();
 
             $this->command->info('Base users inserted.');
         } else {
