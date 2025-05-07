@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Bid\FilterBidRequest;
 use App\Http\Requests\Bid\BidStoreRequest;
 use App\Http\Requests\Bid\BidUpdateRequest;
+use App\Http\Requests\Bid\FilterBidRequest;
 use App\Http\Resources\Bid\BidCollection;
 use App\Http\Resources\Bid\BidResource;
 use App\Jobs\ProcessBid;
 use App\Models\Bid;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(
@@ -36,10 +36,11 @@ class BidController extends Controller
      *     @OA\Response(response=401, description="Неавторизованный доступ"),
      *     @OA\Response(response=403, description="Доступ запрещён")
      * )
+     * @throws AuthorizationException
      */
     public function index(FilterBidRequest $request): BidCollection
     {
-        $this->authorizeRoles([1, 2]); // Админ или модератор
+        $this->authorize('index', Bid::class);
 
         $query = Bid::query();
 
@@ -74,10 +75,14 @@ class BidController extends Controller
      *     @OA\Response(response=200, description="Успешный ответ"),
      *     @OA\Response(response=404, description="Заявка не найдена")
      * )
+     * @throws AuthorizationException
      */
     public function show(int $id): BidResource
     {
-        $bid = Bid::findOrFail($id);
+        $bid = Bid::with('user')->findOrFail($id);
+
+        $this->authorize('show', $bid);
+
         return new BidResource($bid);
     }
 
@@ -85,7 +90,7 @@ class BidController extends Controller
      * @OA\Post(
      *     path="/api/bids",
      *     summary="Создание новой заявки",
-     *     description="Создание заявки доступно только пользователям с ролью role_id = 3",
+     *     description="Создание заявки доступно только авторизированным пользователям",
      *     tags={"Bids"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -106,10 +111,11 @@ class BidController extends Controller
      *         description="Доступ запрещён"
      *     )
      * )
+     * @throws AuthorizationException
      */
     public function store(BidStoreRequest $request): JsonResponse
     {
-        $this->authorizeRoles([1, 3]);
+        $this->authorize('create', Bid::class);
 
         $validated = $request->validated();
         $userId = auth()->id();
@@ -137,10 +143,11 @@ class BidController extends Controller
      *     @OA\Response(response=200, description="Заявка успешно обновлена"),
      *     @OA\Response(response=403, description="Доступ запрещён")
      * )
+     * @throws AuthorizationException
      */
     public function update(BidUpdateRequest $request, int $id): BidResource
     {
-        $this->authorizeRoles([1, 2]); // Админ или модератор
+        $this->authorize('update', Bid::class);
 
         $bid = Bid::findOrFail($id);
         $bid->update($request->validated());
@@ -159,21 +166,15 @@ class BidController extends Controller
      *     @OA\Response(response=200, description="Заявка успешно удалена"),
      *     @OA\Response(response=403, description="Доступ запрещён")
      * )
+     * @throws AuthorizationException
      */
     public function destroy(int $id): JsonResponse
     {
-        $this->authorizeRoles([1]); // Только админ
+        $this->authorize('delete', Bid::class);
 
         $bid = Bid::findOrFail($id);
         $bid->delete();
 
         return response()->json(['message' => 'Заявка успешно удалена']);
-    }
-
-    private function authorizeRoles(array $roles, string $message = ''): void
-    {
-        if (!in_array(Auth::user()->role_id, $roles)) {
-            abort(403, $message ?: 'Access denied');
-        }
     }
 }

@@ -18,6 +18,7 @@ class Bid extends Model
         'status',
         'message',
         'comment',
+        'user_id',
     ];
 
     protected static function booted(): void
@@ -37,6 +38,6 @@ class Bid extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'email', 'email');
+        return $this->belongsTo(User::class);
     }
 }

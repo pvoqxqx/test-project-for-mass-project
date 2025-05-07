@@ -235,7 +235,7 @@
                     "Bids"
                 ],
                 "summary": "Создание новой заявки",
-                "description": "Создание заявки доступно только пользователям с ролью role_id = 3",
+                "description": "Создание заявки доступно только авторизированным пользователям",
                 "operationId": "852699b0f4d07d989ba550b5b905ad88",
                 "requestBody": {
                     "required": true,
@@ -397,52 +397,19 @@
                 ]
             }
         },
-        "/api/email/verify/{id}/{hash}": {
+        "/api/users/{id}": {
             "get": {
                 "tags": [
                     "Users"
                 ],
-                "summary": "Подтверждение email",
-                "operationId": "75ba3c23a450d73e25ea311ea2860ed5",
+                "summary": "Получить информацию о пользователе",
+                "description": "Получить информацию о пользователе и его заявках",
+                "operationId": "6f51bd5fa2dddcd25e44cfa53dcbd10a",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "hash",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Email подтвержден"
-                    },
-                    "403": {
-                        "description": "Неверный токен"
-                    }
-                }
-            }
-        },
-        "/api/users/{id}": {
-            "delete": {
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Удаление пользователя (только для администратора)",
-                "operationId": "0b4133ed462528a5e648b88ead11e929",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
+                        "description": "ID пользователя",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -451,21 +418,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Пользователь удален"
+                        "description": "Информация о пользователе",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResource"
+                                }
+                            }
+                        }
                     },
-                    "403": {
-                        "description": "Доступ запрещен"
+                    "404": {
+                        "description": "Пользователь не найден"
                     }
-                }
-            }
-        },
-        "/api/user/{id}": {
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Users"
                 ],
-                "summary": "Обновление профиля (только для обычного пользователя)",
-                "operationId": "479f33f268cca6dba677c396b495b60d",
+                "summary": "Обновление профиля (только для обычного пользователя и админа)",
+                "operationId": "070e37fc9aff78ae73860751bc990ed3",
                 "parameters": [
                     {
                         "name": "id",
@@ -502,6 +479,71 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Удаление пользователя (только для администратора)",
+                "operationId": "0b4133ed462528a5e648b88ead11e929",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь удален"
+                    },
+                    "403": {
+                        "description": "Доступ запрещен"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/email/verify/{id}/{hash}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Подтверждение email",
+                "operationId": "75ba3c23a450d73e25ea311ea2860ed5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email подтвержден"
+                    },
+                    "403": {
+                        "description": "Неверный токен"
+                    }
+                }
             }
         }
     },
@@ -703,6 +745,11 @@
         {
             "name": "Users",
             "description": "API для управления пользователями"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
         }
     ]
 }

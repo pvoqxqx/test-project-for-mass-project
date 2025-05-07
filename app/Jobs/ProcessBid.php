@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ProcessBid implements ShouldQueue
 {
@@ -24,12 +25,19 @@ class ProcessBid implements ShouldQueue
 
     public function handle(): void
     {
-        Bid::create([
-            ...$this->data,
-            'user_id' => $this->userId,
-        ]);
+        if ($this->userId) {
+            $bid = Bid::create([
+                ...$this->data,
+                'user_id' => $this->userId,
+            ]);
 
-        // добавить уведомления, логирование и т.п.
+//            Log::info("Заявка создана пользователем ID: {$this->userId}", [
+//                'bid_id' => $bid->id,
+//                'user_id' => $this->userId,
+//                'data' => $this->data
+//            ]);
+        } else {
+            Log::error("Пользователь с ID {$this->userId} не найден для создания заявки.");
+        }
     }
 }
-

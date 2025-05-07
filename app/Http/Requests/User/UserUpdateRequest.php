@@ -25,7 +25,6 @@ class UserUpdateRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'password' => 'required|string',
-            'role_id' => 'required|integer',
         ];
     }
 }

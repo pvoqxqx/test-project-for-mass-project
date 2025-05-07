@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\UserUpdateRequest;
 use App\Http\Resources\User\UserResource;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(
@@ -20,6 +18,42 @@ use Illuminate\Support\Facades\Auth;
  */
 class UserController extends Controller
 {
+    /**
+     * Показать информацию о пользователе.
+     *
+     * @OA\Get(
+     *     path="/api/users/{id}",
+     *     summary="Получить информацию о пользователе",
+     *     description="Получить информацию о пользователе и его заявках",
+     *     security={{"bearerAuth":{}}},
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer"),
+     *         description="ID пользователя"
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Информация о пользователе",
+     *         @OA\JsonContent(ref="#/components/schemas/UserResource")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Пользователь не найден"
+     *     )
+     * )
+     * @throws AuthorizationException
+     */
+    public function show($id): UserResource
+    {
+        $this->authorize('show', auth()->user());
+
+        $user = User::with('bids')->findOrFail($id);
+        return new UserResource($user);
+    }
+
     /**
      * @OA\Get(
      *     path="/api/email/verify/{id}/{hash}",
@@ -35,7 +69,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        if (!hash_equals((string)$hash, sha1($user->getEmailForVerification()))) {
             return response()->json(['message' => 'Неверный токен.'], 403);
         }
 
@@ -53,28 +87,30 @@ class UserController extends Controller
      * @OA\Delete(
      *     path="/api/users/{id}",
      *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Удаление пользователя (только для администратора)",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="Пользователь удален"),
      *     @OA\Response(response=403, description="Доступ запрещен")
      * )
+     * @throws AuthorizationException
      */
     public function destroy($id): JsonResponse
     {
-        $this->authorizeRoles([1]);
+        $this->authorize('delete', auth()->user());
 
-        $target = User::findOrFail($id);
-        $target->delete();
+        $user = User::findOrFail($id);
+        $user->delete();
 
         return response()->json(['message' => 'Пользователь удален.']);
     }
 
     /**
      * @OA\Put(
-     *     path="/api/user/{id}",
+     *     path="/api/users/{id}",
      *     tags={"Users"},
-     *     summary="Обновление профиля (только для обычного пользователя)",
      *     security={{"bearerAuth":{}}},
+     *     summary="Обновление профиля (только для обычного пользователя и админа)",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -89,12 +125,13 @@ class UserController extends Controller
      *     @OA\Response(response=403, description="Редактирование разрешено только для пользователей и администраторов"),
      *     @OA\Response(response=404, description="Пользователь не найден")
      * )
+     * @throws AuthorizationException
      */
     public function update(UserUpdateRequest $request, $id): JsonResponse
     {
         $user = User::findOrFail($id);
 
-        $this->authorizeRoles([1,3], 'Редактирование разрешено только для пользователей и администраторов.');
+        $this->authorize('update', $user);
 
         $data = $request->validated();
 
@@ -106,15 +143,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Данные успешно обновлены.',
-            'user'    => new UserResource($user),
+            'user' => new UserResource($user),
         ]);
     }
-
-    private function authorizeRoles(array $roles, string $message = ''): void
-    {
-        if (!in_array(Auth::user()->role_id, $roles)) {
-            abort(403, $message ?: 'Access denied');
-        }
-    }
-
 }

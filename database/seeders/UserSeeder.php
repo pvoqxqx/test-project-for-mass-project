@@ -43,7 +43,7 @@ class UserSeeder extends Seeder
                 [
                     'role_id' => 3,
                     'name' => 'user',
-                    'email' => 'tesetsetsetstesetsetsets@gmail.com',
+                    'email' => 'denis.klevtsov@mail.com',
                     'email_verified_at' => now(),
                     'password' => Hash::make('password'),
                     'remember_token' => Str::random(10),

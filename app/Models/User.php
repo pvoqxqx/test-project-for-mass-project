@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -48,6 +49,6 @@ class User extends Authenticatable
 
     public function bids(): HasMany
     {
-        return $this->hasMany(Bid::class, 'email', 'email');
+        return $this->hasMany(Bid::class);
     }
 }

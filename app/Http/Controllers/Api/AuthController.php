@@ -87,6 +87,7 @@ class AuthController extends Controller
      *     ),
      *     @OA\Response(response=401, description="Неверный логин или пароль")
      * )
+     * @throws ValidationException
      */
     public function login(UserLoginRequest $request): JsonResponse
     {
