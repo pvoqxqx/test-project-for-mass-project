@@ -31,13 +31,17 @@ php artisan db:seed
 
 php artisan l5-swagger:generate
 
-### 7. Доступ к сервисам
+### 7. Включение очередей
+
+php artisan queue:work
+
+### 8. Доступ к сервисам
 
 Swagger API документация: http://127.0.0.1:8000/api/documentation
 
 Log Viewer: http://127.0.0.1:8000/log-viewer
 
-### 8. Настройка почтового сервиса
+### 9. Настройка почтового сервиса
 
 Для уведомлений зайдите в Mailtrap и добавьте конфигурацию в .env, используя данные из вашего аккаунта.
 
